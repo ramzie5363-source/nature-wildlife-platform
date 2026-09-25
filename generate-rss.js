@@ -1,15 +1,26 @@
 const fs = require('fs');
 const path = require('path');
 
-// ⚠️ CHANGE THIS to your actual Netlify domain URL
 const SITE_URL = 'https://rumpai.netlify.app'; 
 
-const postsPath = path.join(__dirname, 'content', 'posts.json');
-const outputPath = path.join(__dirname, 'feed.xml');
+// Look for posts.json in ./content/posts.json or ./posts.json
+let postsPath = path.join(__dirname, 'content', 'posts.json');
+if (!fs.existsSync(postsPath)) {
+  postsPath = path.join(__dirname, 'posts.json');
+}
 
 if (!fs.existsSync(postsPath)) {
-  console.error('Error: content/posts.json not found!');
-  process.exit(1);
+  console.error('Could not find posts.json! Creating fallback feed.xml...');
+  const fallbackXml = `<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0">
+  <channel>
+    <title>Rumpai Field Notes</title>
+    <link>${SITE_URL}</link>
+    <description>Bilingual Field Notes</description>
+  </channel>
+</rss>`;
+  fs.writeFileSync(path.join(__dirname, 'feed.xml'), fallbackXml);
+  process.exit(0);
 }
 
 const posts = JSON.parse(fs.readFileSync(postsPath, 'utf8'));
@@ -52,5 +63,5 @@ const rssXml = `<?xml version="1.0" encoding="UTF-8" ?>
   </channel>
 </rss>`;
 
-fs.writeFileSync(outputPath, rssXml.trim());
+fs.writeFileSync(path.join(__dirname, 'feed.xml'), rssXml.trim());
 console.log('Successfully generated feed.xml');
